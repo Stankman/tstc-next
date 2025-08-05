@@ -1,0 +1,27 @@
+{
+  "common": {
+    "title": "Aplicación TSTC Next.js",
+    "description": "Aplicación Next.js del Colegio Técnico Estatal de Texas",
+    "loading": "Cargando...",
+    "error": "Error",
+    "notFound": "Página no encontrada",
+    "goHome": "Ir a la página de inicio"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "programs": "Programas",
+    "about": "Acerca de",
+    "contact": "Contacto"
+  },
+  "programs": {
+    "title": "Programas",
+    "searchPlaceholder": "Buscar programas...",
+    "noResults": "No se encontraron programas",
+    "loadMore": "Cargar más programas",
+    "category": "Categoría",
+    "allCategories": "Todas las categorías"
+  },
+  "footer": {
+    "copyright": "© 2025 Colegio Técnico Estatal de Texas. Todos los derechos reservados."
+  }
+}

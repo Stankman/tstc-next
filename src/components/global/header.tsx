@@ -9,6 +9,7 @@ import PrimaryTSTCLogo from "../../../public/primary-tstc-logo.svg";
 import { mainMenu } from "../../../menu.config";
 import { Button } from "../ui/button";
 import { HeaderProps } from "../../lib/types";
+import { LanguageSwitcher } from "./language-switcher";
 
 export const Header = ({id, className} : HeaderProps) => {
     const [hidden, setHidden] = useState(false);
@@ -54,14 +55,17 @@ export const Header = ({id, className} : HeaderProps) => {
                         loading="eager"
                     />
                 </Link>
-                <div className="flex items-center gap-2">
-                    {Object.entries(mainMenu).map(([key, props]) => (
-                        <Button key={key} variant={props.variant} size={props.size} hideMobile={true}>
-                            <Link href={props.href}>
-                                {props.label}
-                            </Link>
-                        </Button>
-                    ))}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        {Object.entries(mainMenu).map(([key, props]) => (
+                            <Button key={key} variant={props.variant} size={props.size} hideMobile={true}>
+                                <Link href={props.href}>
+                                    {props.label}
+                                </Link>
+                            </Button>
+                        ))}
+                    </div>
+                    <LanguageSwitcher />
                 </div>
             </div>
         </header>

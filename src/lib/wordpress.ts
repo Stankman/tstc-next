@@ -10,6 +10,10 @@ import type {
   Page,
   Author,
   FeaturedMedia,
+  Campus,
+  Industry,
+  Schedule,
+  Award,
 } from "./wordpress.d";
 
 const baseUrl = process.env.WORDPRESS_URL;
@@ -106,17 +110,19 @@ async function wordpressFetchWithPagination<T>(
   };
 }
 
-// New function for paginated posts
-export async function getPostsPaginated(
+export async function getItemsPaginated<T>(
+  postTypeSlug: string,
   page: number = 1,
   perPage: number = 9,
   filterParams?: {
     author?: string;
     tag?: string;
     category?: string;
+    campus?: string;
+    industry?: string;
     search?: string;
   }
-): Promise<WordPressResponse<Post[]>> {
+): Promise<WordPressResponse<T[]>> {
   const query: Record<string, any> = {
     _embed: true,
     per_page: perPage,
@@ -124,32 +130,53 @@ export async function getPostsPaginated(
   };
 
   // Build cache tags based on filters
-  const cacheTags = ["wordpress", "posts"];
+  const cacheTags = ["wordpress", postTypeSlug];
 
   if (filterParams?.search) {
     query.search = filterParams.search;
-    cacheTags.push("posts-search");
+    cacheTags.push(`${postTypeSlug}-search`);
   }
   if (filterParams?.author) {
     query.author = filterParams.author;
-    cacheTags.push(`posts-author-${filterParams.author}`);
+    cacheTags.push(`${postTypeSlug}-author-${filterParams.author}`);
   }
   if (filterParams?.tag) {
     query.tags = filterParams.tag;
-    cacheTags.push(`posts-tag-${filterParams.tag}`);
+    cacheTags.push(`${postTypeSlug}-tag-${filterParams.tag}`);
   }
   if (filterParams?.category) {
-    query.categories = filterParams.category;
-    cacheTags.push(`posts-category-${filterParams.category}`);
+    // Support comma-separated category IDs for multiple category filtering
+    const categoryIds = filterParams.category.split(',').filter(Boolean);
+    if (categoryIds.length > 0) {
+      query.categories = categoryIds.join(',');
+      cacheTags.push(`${postTypeSlug}-category-${filterParams.category}`);
+    }
+  }
+  if (filterParams?.campus) {
+    // Support comma-separated campus IDs for multiple campus filtering
+    const campusIds = filterParams.campus.split(',').filter(Boolean);
+    if (campusIds.length > 0) {
+      query.campus = campusIds.join(',');
+      cacheTags.push(`${postTypeSlug}-campus-${filterParams.campus}`);
+    }
+  }
+  if (filterParams?.industry) {
+    // Support comma-separated industry IDs for multiple industry filtering
+    const industryIds = filterParams.industry.split(',').filter(Boolean);
+    if (industryIds.length > 0) {
+      query.industry = industryIds.join(',');
+      cacheTags.push(`${postTypeSlug}-industry-${filterParams.industry}`);
+    }
   }
 
-  // Add page-specific cache tag for granular invalidation
-  cacheTags.push(`posts-page-${page}`);
+  cacheTags.push(`${postTypeSlug}-page-${page}`);
 
-  const url = `${baseUrl}/wp-json/wp/v2/posts${
+  const url = `${baseUrl}/wp-json/wp/v2/${postTypeSlug}${
     query ? `?${querystring.stringify(query)}` : ""
   }`;
   const userAgent = "Next.js WordPress Client";
+
+  console.log(url);
 
   const response = await fetch(url, {
     headers: {
@@ -180,12 +207,28 @@ export async function getPostsPaginated(
   };
 }
 
-export async function getAllPosts(filterParams?: {
-  author?: string;
-  tag?: string;
-  category?: string;
-  search?: string;
-}): Promise<Post[]> {
+export async function getPostsPaginated(
+  page: number = 1,
+  perPage: number = 9,
+  filterParams?: {
+    author?: string;
+    tag?: string;
+    category?: string;
+    search?: string;
+  }
+): Promise<WordPressResponse<Post[]>> {
+  return getItemsPaginated<Post>('posts', page, perPage, filterParams);
+}
+
+export async function getAllItems<T>(
+  postTypeSlug: string,
+  filterParams?: {
+    author?: string;
+    tag?: string;
+    category?: string;
+    search?: string;
+  }
+): Promise<T[]> {
   const query: Record<string, any> = {
     _embed: true,
     per_page: 100,
@@ -215,17 +258,34 @@ export async function getAllPosts(filterParams?: {
     }
   }
 
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", query);
+  return wordpressFetch<T[]>(`/wp-json/wp/v2/${postTypeSlug}`, query);
+}
+
+export async function getAllPosts(filterParams?: {
+  author?: string;
+  tag?: string;
+  category?: string;
+  search?: string;
+}): Promise<Post[]> {
+  return getAllItems<Post>('posts', filterParams);
+}
+
+export async function getItemById<T>(postTypeSlug: string, id: number): Promise<T> {
+  return wordpressFetch<T>(`/wp-json/wp/v2/${postTypeSlug}/${id}`);
+}
+
+export async function getItemBySlug<T>(postTypeSlug: string, slug: string): Promise<T> {
+  return wordpressFetch<T[]>(`/wp-json/wp/v2/${postTypeSlug}`, { slug }).then(
+    (items) => items[0]
+  );
 }
 
 export async function getPostById(id: number): Promise<Post> {
-  return wordpressFetch<Post>(`/wp-json/wp/v2/posts/${id}`);
+  return getItemById<Post>("posts", id);
 }
 
 export async function getPostBySlug(slug: string): Promise<Post> {
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", { slug }).then(
-    (posts) => posts[0]
-  );
+  return getItemBySlug<Post>("posts", slug);
 }
 
 export async function getAllCategories(): Promise<Category[]> {
@@ -242,9 +302,71 @@ export async function getCategoryBySlug(slug: string): Promise<Category> {
   );
 }
 
+export async function getAllCampuses(): Promise<Campus[]> {
+  return wordpressFetch<Campus[]>("/wp-json/wp/v2/campus");
+}
+
+export async function getCampusById(id: number): Promise<Campus> {
+  return wordpressFetch<Campus>(`/wp-json/wp/v2/campus/${id}`);
+}
+  
+export async function getCampusBySlug(slug: string): Promise<Campus> {
+  return wordpressFetch<Campus[]>("/wp-json/wp/v2/campus", { slug }).then(
+    (campuses) => campuses[0]
+  );
+}
+
+export async function getAllIndustries(): Promise<Industry[]> {
+  return wordpressFetch<Industry[]>("/wp-json/wp/v2/industry");
+}
+
+export async function getIndustryById(id: number): Promise<Industry> {
+  return wordpressFetch<Industry>(`/wp-json/wp/v2/industry/${id}`);
+}
+  
+export async function getIndustryBySlug(slug: string): Promise<Industry> {
+  return wordpressFetch<Industry[]>("/wp-json/wp/v2/industry", { slug }).then(
+    (industries) => industries[0]
+  );
+}
+
+export async function getAllSchedules(): Promise<Schedule[]> {
+  return wordpressFetch<Schedule[]>("/wp-json/wp/v2/schedule");
+}
+
+export async function getScheduleById(id: number): Promise<Schedule> {
+  return wordpressFetch<Schedule>(`/wp-json/wp/v2/schedule/${id}`);
+}
+
+export async function getScheduleBySlug(slug: string): Promise<Schedule> {
+  return wordpressFetch<Schedule[]>("/wp-json/wp/v2/schedule", { slug }).then(
+    (schedules) => schedules[0]
+  );
+}
+
+export async function getAllAwards(): Promise<Award[]> {
+  return wordpressFetch<Award[]>("/wp-json/wp/v2/award");
+}
+
+export async function getAwardById(id: number): Promise<Award> {
+  return wordpressFetch<Award>(`/wp-json/wp/v2/award/${id}`);
+}
+
+export async function getAwardBySlug(slug: string): Promise<Award> {
+  return wordpressFetch<Award[]>("/wp-json/wp/v2/award", { slug }).then(
+    (awards) => awards[0]
+  );
+}
+
 export async function getPostsByCategory(categoryId: number): Promise<Post[]> {
   return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", {
     categories: categoryId,
+  });
+}
+
+export async function getPostsByCampus(campusId: number): Promise<Post[]> {
+  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", {
+    campuses: campusId,
   });
 }
 
@@ -334,6 +456,13 @@ export async function searchCategories(query: string): Promise<Category[]> {
   });
 }
 
+export async function searchCampuses(query: string): Promise<Campus[]> {
+  return wordpressFetch<Campus[]>("/wp-json/wp/v2/campuses", {
+    search: query,
+    per_page: 100,
+  });
+}
+
 export async function searchTags(query: string): Promise<Tag[]> {
   return wordpressFetch<Tag[]>("/wp-json/wp/v2/tags", {
     search: query,
@@ -348,15 +477,14 @@ export async function searchAuthors(query: string): Promise<Author[]> {
   });
 }
 
-// Function specifically for generateStaticParams - fetches ALL posts
-export async function getAllPostSlugs(): Promise<{ slug: string }[]> {
+export async function getAllItemSlugs(postTypeSlug: string): Promise<{ slug: string }[]> {
   const allSlugs: { slug: string }[] = [];
   let page = 1;
   let hasMore = true;
 
   while (hasMore) {
-    const response = await wordpressFetchWithPagination<Post[]>(
-      "/wp-json/wp/v2/posts",
+    const response = await wordpressFetchWithPagination<any[]>(
+      `/wp-json/wp/v2/${postTypeSlug}`,
       {
         per_page: 100,
         page,
@@ -364,14 +492,18 @@ export async function getAllPostSlugs(): Promise<{ slug: string }[]> {
       }
     );
 
-    const posts = response.data;
-    allSlugs.push(...posts.map((post) => ({ slug: post.slug })));
+    const items = response.data;
+    allSlugs.push(...items.map((item) => ({ slug: item.slug })));
 
     hasMore = page < response.headers.totalPages;
     page++;
   }
 
   return allSlugs;
+}
+
+export async function getAllPostSlugs(): Promise<{ slug: string }[]> {
+  return getAllItemSlugs('posts');
 }
 
 // Enhanced pagination functions for specific queries

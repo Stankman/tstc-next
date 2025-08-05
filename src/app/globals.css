@@ -56,6 +56,12 @@
   font-display: swap;
 }
 
+@layer base {
+  body {
+    @apply h-screen;
+  }
+}
+
 @theme {
   --font-sans: "Hando", Arial, sans-serif;
 

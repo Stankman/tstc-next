@@ -1,54 +1,110 @@
+import { Breadcrumbs } from "@/components/global/breadcrumbs";
 import { Section, Container, Prose } from "../../components/craft";
-import { getPostsPaginated } from "../../lib/wordpress";
+import { getAllCampuses, getAllIndustries, getItemsPaginated } from "../../lib/wordpress";
+import { ProgramCard } from "@/components/programs/archive/program-card";
+import { Program } from "@/lib/wordpress.d";
+import { ProgramSearch } from "@/components/programs/archive/program-search";
+import { TaxonomyFilter } from "@/components/programs/archive/taxonomy-filter";
+import { ProgramPagination } from "@/components/programs/archive/program-pagination";
+import {getTranslations} from 'next-intl/server';
 
-export default async function Page({ searchParams } : {
+// Archive Page (Server Component)
+export default async function Page({ searchParams }: {
     searchParams: Promise<{
         page?: string;
         search?: string;
+        category?: string;
+        campus?: string;
+        industry?: string;
     }>
 }) {
+    const t = await getTranslations('programs');
     const params = await searchParams;
-    const { page: pageParam, search } = params;
+    const { page: pageParam, search, category, campus, industry } = params;
 
-    //Handle Pagination
     const page = pageParam ? parseInt(pageParam, 10) : 1;
-    const resultsPerPage = 10;
+    const resultsPerPage = 9;
 
-    //Fetch data based on search parameters using efficient pagination
-    const [postsResponse] = await Promise.all([
-        getPostsPaginated(page, resultsPerPage),
+    const [postsResponse, campuses, industries] = await Promise.all([
+        getItemsPaginated<Program>("program", page, resultsPerPage, { category, campus, industry, search }),
+        getAllCampuses(),
+        getAllIndustries().catch(() => []), // Gracefully handle if industry taxonomy doesn't exist yet
     ]);
 
-    const { data: posts, headers } = postsResponse;
+    const { data: programs, headers } = postsResponse;
     const { total, totalPages } = headers;
 
     return (
         <Section>
-            <Container>
-                <div className="space-y-8">
+            <div className="bg-tstc-blue-200 text-white">
+                <Container className="px-4 py-8">
+                    <Breadcrumbs labels={{ [t('title')]: '/programs' }} />
                     <Prose>
-                        <h2>All Posts</h2>
-                        <p className="text-muted-foreground">{total} {total === 1 ? "post" : "posts"} found {search && " matching your search"}</p>
+                        <div className="text-4xl md:text-6xl">{t('title')}</div>
                     </Prose>
-
-                    {posts.length > 0 ? (
-                        <div className="grid md:grid-cols-3 gap-4">
-                        {posts.map((post) => (
-                            <div key={post.id}
-                                dangerouslySetInnerHTML={{
-                                __html: post.title?.rendered || "Untitled Post",
-                                }}
-                                className="text-xl text-primary font-medium group-hover:underline decoration-muted-foreground underline-offset-4 decoration-dotted transition-all"
-                            ></div>
-                        ))}
-                        </div>
-                    ) : (
-                        <div className="h-24 w-full border rounded-lg bg-accent/25 flex items-center justify-center">
-                        <p>No posts found</p>
-                        </div>
+                </Container>
+            </div>
+            <Container className="flex flex-col md:flex-row py-6">
+                {/* Category Filters */}
+                <div id="filters" className="flex-none w-full md:w-1/4 px-4 mb-6 md:mb-0">
+                    <div className="text-3xl mb-4">Filters</div>
+                    <ProgramSearch />
+                    {/* Campus Filter */}
+                    <TaxonomyFilter 
+                        items={campuses}
+                        taxonomyKey="campus"
+                        label="Campuses"
+                        singularLabel="Campus"
+                    />
+                    
+                    {/* Industry Filter - only show if industries exist */}
+                    {industries.length > 0 && (
+                        <TaxonomyFilter 
+                            items={industries}
+                            taxonomyKey="industry"
+                            label="Industries"
+                            singularLabel="Industry"
+                        />
                     )}
+                </div>
+
+                {/* Posts Grid */}
+                <div id="body" className="flex-none w-full md:w-3/4 px-4">
+                    <div id="programs-results" className="text-xl mb-4">
+                        {total} {total === 1 ? 'Result' : 'Results'}
+                        {(search || category || campus || industry) && (
+                            <span className="text-gray-600 text-base ml-2">
+                                {search && `for "${search}"`}
+                                {search && (category || campus || industry) && " "}
+                                {(category || campus || industry) && `in selected filters`}
+                            </span>
+                        )}
+                    </div>
+                    <div id="programs-list" className="py-6">
+                        {programs.length > 0 ? (
+                            <div className="grid md:grid-cols-3 gap-8">
+                                {programs.map((program) => (
+                                    <ProgramCard
+                                        key={program.id}
+                                        program={program}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="h-24 w-full border rounded-lg bg-accent/25 flex items-center justify-center">
+                                <p>{t('noResults')}</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Pagination */}
+                    <ProgramPagination 
+                        currentPage={page}
+                        totalPages={totalPages}
+                        total={total}
+                    />
                 </div>
             </Container>
         </Section>
     );
-};
+}

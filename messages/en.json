@@ -1,0 +1,27 @@
+{
+  "common": {
+    "title": "TSTC Next.js App",
+    "description": "Texas State Technical College Next.js App",
+    "loading": "Loading...",
+    "error": "Error",
+    "notFound": "Page not found",
+    "goHome": "Go to homepage"
+  },
+  "navigation": {
+    "home": "Home",
+    "programs": "Programs",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "programs": {
+    "title": "Programs",
+    "searchPlaceholder": "Search programs...",
+    "noResults": "No programs found",
+    "loadMore": "Load more programs",
+    "category": "Category",
+    "allCategories": "All Categories"
+  },
+  "footer": {
+    "copyright": "© 2025 Texas State Technical College. All rights reserved."
+  }
+}

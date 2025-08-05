@@ -1,6 +1,7 @@
 import { VariantProps, cva } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 import React from "react";
+import { motion } from "motion/react";
 
 const buttonVariants = cva(
     "px-5 py-2.5 transition-colors duration-300",
@@ -41,14 +42,25 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
     variant,
     size,
     hideMobile,
+    children,
+    onClick,
+    disabled,
+    type,
     ...props
 }, ref) => {
     return (
-        <button
+        <motion.button
             className={cn(buttonVariants({ variant, size, hideMobile, className }))}
             ref={ref}
-            {...props}
-        />
+            whileHover={{ scale: disabled ? 1 : 1.05 }}
+            whileTap={{ scale: disabled ? 1 : 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            onClick={onClick}
+            disabled={disabled}
+            type={type}
+        >
+            {children}
+        </motion.button>
     )
 });
 

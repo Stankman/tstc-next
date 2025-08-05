@@ -77,6 +77,19 @@ export interface Post extends WPEntity {
     tags: number[];
     meta: Record<string, unknown>;
 }
+
+export interface Program extends Post {
+    acf: {
+        short_description?: string;
+        tuition?: string;
+        kuali_id?: string;
+        tier?: number;
+    };
+    industry: number[];
+    schedule: number[];
+    award: number[];
+    campus: number[];
+}
   
 export interface Page extends WPEntity {
     title: RenderedTitle;
@@ -111,7 +124,23 @@ export interface Category extends Taxonomy {
 export interface Tag extends Taxonomy {
     taxonomy: "post_tag";
 }
-  
+
+export interface Campus extends Taxonomy {
+    taxonomy: "campus";
+}
+
+export interface Industry extends Taxonomy {
+    taxonomy: "industry";
+}
+
+export interface Schedule extends Taxonomy {
+    taxonomy: "schedule";
+}
+
+export interface Award extends Taxonomy {
+    taxonomy: "award";
+}
+
 export interface Author {
     id: number;
     name: string;
