@@ -1,152 +1,135 @@
-// Kuali API integration utilities
-import { Program } from "@/lib/wordpress.d";
+import { KualiProgram, KualiSpecialization, KualiSemester, KualiCourseBlock, KualiCourse } from "./kuali.d";
 
-export interface KualiProgram {
-  id: string;
-  status: string;
-  title?: string;
-  description?: string;
-  [key: string]: any;
+const baseUrl = process.env.KUALI_API_URL;
+
+if (!baseUrl) {
+    throw new Error("KUALI_API_URL environment variable is not set");
 }
 
-export interface KualiLocation {
-  id: string;
-  name: string;
-  [key: string]: any;
-}
-
-export interface KualiDegreeType {
-  id: string;
-  name: string;
-  [key: string]: any;
-}
-
-export interface KualiModality {
-  id: string;
-  name: string;
-  [key: string]: any;
-}
-
-export interface KualiTimelineLabel {
-  id: string;
-  label: string;
-  timeline: string;
-  start: string;
-  status: string;
-}
-
-export interface KualiCourse {
-  id: string;
-  code: string;
-  title: string;
-  number: string;
-  credits: number;
-  lab: number;
-  lecture: number;
-}
-
-export interface KualiCourseBlock {
-  optional: boolean;
-  minimumCredits: number;
-  courses: KualiCourse[];
-  credits: number;
-}
-
-export interface KualiSemester {
-  label: string;
-  credits: number;
-  blocks: KualiCourseBlock[];
-}
-
-export interface KualiDegreePlan {
-  id: string;
-  title: string;
-  description: string;
-  code: string;
-  monthsToComplete: string;
-  locations: string[];
-  programRequirements?: any;
-  semesters?: KualiSemester[];
-  totalCredits?: number;
-  [key: string]: any;
-}
-
-export interface KualiSpecialization {
-  id: string;
-  pid: string;
-  title: string;
-  description?: string;
-  status: string;
-  timelines?: KualiTimelineLabel[];
-  degreePlan?: KualiDegreePlan;
-  [key: string]: any;
-}
-
-export interface KualiApiResponse {
-  program: KualiProgram;
-  locations: KualiLocation[];
-  degreeTypes: KualiDegreeType[];
-  modalities: KualiModality[];
-  specializations: KualiSpecialization[];
-}
-
-/**
- * Get Kuali program ID from WordPress program
- * Uses the kuali_id field from ACF
- */
-export function getKualiProgramId(wpProgram: Program): string | null {
-  // Get Kuali ID from ACF field
-  if (wpProgram.acf?.kuali_id) {
-    return wpProgram.acf.kuali_id as string;
+export async function fetchKualiData(endpoint: string): Promise<any> {
+  const token = process.env.KUALI_API_TOKEN;
+  
+  if (!token) {
+    throw new Error('KUALI_API_TOKEN environment variable is not set');
   }
   
-  return null;
-}
+  const response = await fetch(`${baseUrl}${endpoint}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
-/**
- * Fetch Kuali program data from the API route
- */
-export async function fetchKualiProgramData(programId: string): Promise<KualiApiResponse | null> {
-  try {
-    const response = await fetch(`/api/kuali/${programId}`);
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`Kuali program ${programId} not found or not active`);
-        return null;
-      }
-      throw new Error(`Failed to fetch Kuali data: ${response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching Kuali program data:', error);
-    return null;
+  if (!response.ok) {
+    throw new Error(`Kuali API Request failed: ${response.status} ${response.statusText}`);
   }
+
+  return response;
 }
 
-/**
- * Fetch Kuali data on the server side (for use in server components)
- */
-export async function fetchKualiProgramDataServer(programId: string): Promise<KualiApiResponse | null> {
+export async function getKualiProgramById(programId: string): Promise<KualiProgram | null> {
   try {
     const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/kuali/${programId}`, {
-      // Add cache control if needed
-      next: { revalidate: 3600 } // Revalidate every hour
+    const response = await fetch(`${baseUrl}/api/kuali/programs/${programId}`, {
+      next: { revalidate: process.env.NODE_ENV === 'production' ? 3600 : 0 }
     });
     
     if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`Kuali program ${programId} not found or not active`);
-        return null;
-      }
       throw new Error(`Failed to fetch Kuali data: ${response.statusText}`);
     }
     
     return await response.json();
   } catch (error) {
-    console.error('Error fetching Kuali program data on server:', error);
+    console.log('[ERROR] Could not fetch Kuali program data => ', error);
     return null;
   }
+}
+
+export async function getKualiSpecializationById(specializationId: string): Promise<KualiSpecialization | null> {
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/kuali/specializations/${specializationId}`, {
+      next: { revalidate: process.env.NODE_ENV === 'production' ? 3600 : 0 }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Kuali data: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function processProgramRequirements(programRequirements: any): Promise<{ semesters: KualiSemester[], totalCredits: number }> {  
+  if (!programRequirements || !programRequirements.groupings) {
+    return { semesters: [], totalCredits: 0 };
+  }
+
+  const semesters: KualiSemester[] = [];
+  let totalCredits = 0;
+
+  for (const grouping of programRequirements.groupings) {
+    const semester: KualiSemester = {
+      label: grouping.label,
+      credits: 0,
+      blocks: []
+    };
+
+    if (grouping.rules && grouping.rules.rules) {
+      for (const rule of grouping.rules.rules) {
+        if (rule.data && rule.data.courses && rule.data.courses.length > 0) {
+          const block: KualiCourseBlock = {
+            optional: !!rule.data.credits,
+            minimumCredits: Number(rule.data.credits) || 0,
+            courses: [],
+            credits: 0
+          };
+
+          const coursePromises = rule.data.courses.map(async (courseId: string) => {
+            try {
+              const courseUrl = `/courses/${courseId}/latestActive`;
+              
+              const courseData = await fetchKualiData(courseUrl);
+              
+              const course: KualiCourse = {
+                id: courseId,
+                code: courseData.subjectCode || '',
+                title: courseData.title || '',
+                number: courseData.number || '',
+                credits: Number(courseData.semesterCreditHours) || 0,
+                lab: Number(courseData.labHours) || 0,
+                lecture: Number(courseData.lectureHours) || 0
+              };
+
+              return course;
+            } catch (error) {
+              console.error(`Error fetching course ${courseId}:`, error);
+              return null;
+            }
+          });
+
+          const courses = await Promise.all(coursePromises);
+          block.courses = courses.filter(course => course !== null) as KualiCourse[];
+          
+          const blockTotalCredits = block.courses.reduce((sum, course) => sum + course.credits, 0);
+          block.credits = blockTotalCredits;
+          
+          semester.blocks.push(block);
+          
+          if (block.optional) {
+            semester.credits += block.minimumCredits;
+          } else {
+            semester.credits += blockTotalCredits;
+          }
+        }
+      }
+    }
+
+    semesters.push(semester);
+    totalCredits += semester.credits;
+  }
+
+  return { semesters, totalCredits };
 }

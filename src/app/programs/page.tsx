@@ -1,6 +1,6 @@
 import { Breadcrumbs } from "@/components/global/breadcrumbs";
 import { Section, Container, Prose } from "../../components/craft";
-import { getAllCampuses, getAllIndustries, getItemsPaginated } from "../../lib/wordpress";
+import { getAllCampuses, getAllIndustries, getItemsPaginated, getProgramsPaginated } from "../../lib/wordpress";
 import { ProgramCard } from "@/components/programs/archive/program-card";
 import { Program } from "@/lib/wordpress.d";
 import { ProgramSearch } from "@/components/programs/archive/program-search";
@@ -13,20 +13,19 @@ export default async function Page({ searchParams }: {
     searchParams: Promise<{
         page?: string;
         search?: string;
-        category?: string;
         campus?: string;
         industry?: string;
     }>
 }) {
     const t = await getTranslations('programs');
     const params = await searchParams;
-    const { page: pageParam, search, category, campus, industry } = params;
+    const { page: pageParam, search, campus, industry } = params;
 
     const page = pageParam ? parseInt(pageParam, 10) : 1;
     const resultsPerPage = 9;
 
     const [postsResponse, campuses, industries] = await Promise.all([
-        getItemsPaginated<Program>("program", page, resultsPerPage, { category, campus, industry, search }),
+        getProgramsPaginated(page, resultsPerPage, { campus, industry, search }),
         getAllCampuses(),
         getAllIndustries().catch(() => []), // Gracefully handle if industry taxonomy doesn't exist yet
     ]);
@@ -72,11 +71,11 @@ export default async function Page({ searchParams }: {
                 <div id="body" className="flex-none w-full md:w-3/4 px-4">
                     <div id="programs-results" className="text-xl mb-4">
                         {total} {total === 1 ? 'Result' : 'Results'}
-                        {(search || category || campus || industry) && (
+                        {(search || campus || industry) && (
                             <span className="text-gray-600 text-base ml-2">
                                 {search && `for "${search}"`}
-                                {search && (category || campus || industry) && " "}
-                                {(category || campus || industry) && `in selected filters`}
+                                {search && (campus || industry) && " "}
+                                {(campus || industry) && `in selected filters`}
                             </span>
                         )}
                     </div>

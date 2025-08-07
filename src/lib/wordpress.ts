@@ -14,6 +14,7 @@ import type {
   Industry,
   Schedule,
   Award,
+  Program,
 } from "./wordpress.d";
 
 const baseUrl = process.env.WORDPRESS_URL;
@@ -220,6 +221,18 @@ export async function getPostsPaginated(
   return getItemsPaginated<Post>('posts', page, perPage, filterParams);
 }
 
+export async function getProgramsPaginated(
+  page: number = 1,
+  perPage: number = 9,
+  filterParams?: {
+    campus?: string;
+    industry?: string;
+    search?: string;
+  }
+): Promise<WordPressResponse<Program[]>> {
+  return getItemsPaginated<Program>('program', page, perPage, filterParams);
+}
+
 export async function getAllItems<T>(
   postTypeSlug: string,
   filterParams?: {
@@ -270,8 +283,60 @@ export async function getAllPosts(filterParams?: {
   return getAllItems<Post>('posts', filterParams);
 }
 
+export async function getAllPages(): Promise<Page[]> {
+  return getAllItems<Page>('pages');
+}
+
+export async function getAllPrograms(): Promise<Program[]> {
+  return getAllItems<Program>('program');
+}
+
+export async function getAllCampuses(): Promise<Campus[]> {
+  return getAllItems<Campus>('campus');
+}
+
+export async function getAllIndustries(): Promise<Industry[]> {
+  return getAllItems<Industry>('industry');
+}
+
+export async function getAllSchedules(): Promise<Schedule[]> {
+  return getAllItems<Schedule>("schedule");
+}
+
+export async function getAllAwards(): Promise<Award[]> {
+  return getAllItems<Award>("award");
+}
+
 export async function getItemById<T>(postTypeSlug: string, id: number): Promise<T> {
   return wordpressFetch<T>(`/wp-json/wp/v2/${postTypeSlug}/${id}`);
+}
+
+export async function getPageById(id: number): Promise<Page> {
+  return getItemById<Page>("pages", id);
+}
+
+export async function getProgramById(id: number): Promise<Program> {
+  return getItemById<Program>("program", id);
+}
+
+export async function getCampusById(id: number): Promise<Campus> {
+  return getItemById<Campus>("campus", id);
+}
+
+export async function getIndustryById(id: number): Promise<Industry> {
+  return getItemById<Industry>("industry", id);
+}
+
+export async function getScheduleById(id: number): Promise<Schedule> {
+  return getItemById<Schedule>("schedule", id);
+}
+
+export async function getAwardById(id: number): Promise<Award> {
+  return getItemById<Award>("award", id);
+}
+
+export async function getFeaturedMediaById(id: number): Promise<FeaturedMedia> {
+  return getItemById<FeaturedMedia>("media", id);
 }
 
 export async function getItemBySlug<T>(postTypeSlug: string, slug: string): Promise<T> {
@@ -280,173 +345,32 @@ export async function getItemBySlug<T>(postTypeSlug: string, slug: string): Prom
   );
 }
 
-export async function getPostById(id: number): Promise<Post> {
-  return getItemById<Post>("posts", id);
+export async function getPageBySlug(slug: string): Promise<Page> {
+  return getItemBySlug<Page>("pages", slug);
+}
+
+export async function getProgramBySlug(slug: string): Promise<Program> {
+  return getItemBySlug<Program>("program", slug);
 }
 
 export async function getPostBySlug(slug: string): Promise<Post> {
   return getItemBySlug<Post>("posts", slug);
 }
-
-export async function getAllCategories(): Promise<Category[]> {
-  return wordpressFetch<Category[]>("/wp-json/wp/v2/categories");
-}
-
-export async function getCategoryById(id: number): Promise<Category> {
-  return wordpressFetch<Category>(`/wp-json/wp/v2/categories/${id}`);
-}
-
-export async function getCategoryBySlug(slug: string): Promise<Category> {
-  return wordpressFetch<Category[]>("/wp-json/wp/v2/categories", { slug }).then(
-    (categories) => categories[0]
-  );
-}
-
-export async function getAllCampuses(): Promise<Campus[]> {
-  return wordpressFetch<Campus[]>("/wp-json/wp/v2/campus");
-}
-
-export async function getCampusById(id: number): Promise<Campus> {
-  return wordpressFetch<Campus>(`/wp-json/wp/v2/campus/${id}`);
-}
   
 export async function getCampusBySlug(slug: string): Promise<Campus> {
-  return wordpressFetch<Campus[]>("/wp-json/wp/v2/campus", { slug }).then(
-    (campuses) => campuses[0]
-  );
-}
-
-export async function getAllIndustries(): Promise<Industry[]> {
-  return wordpressFetch<Industry[]>("/wp-json/wp/v2/industry");
-}
-
-export async function getIndustryById(id: number): Promise<Industry> {
-  return wordpressFetch<Industry>(`/wp-json/wp/v2/industry/${id}`);
+  return getItemBySlug<Campus>("campus", slug);
 }
   
 export async function getIndustryBySlug(slug: string): Promise<Industry> {
-  return wordpressFetch<Industry[]>("/wp-json/wp/v2/industry", { slug }).then(
-    (industries) => industries[0]
-  );
-}
-
-export async function getAllSchedules(): Promise<Schedule[]> {
-  return wordpressFetch<Schedule[]>("/wp-json/wp/v2/schedule");
-}
-
-export async function getScheduleById(id: number): Promise<Schedule> {
-  return wordpressFetch<Schedule>(`/wp-json/wp/v2/schedule/${id}`);
+  return getItemBySlug<Industry>("industry", slug);
 }
 
 export async function getScheduleBySlug(slug: string): Promise<Schedule> {
-  return wordpressFetch<Schedule[]>("/wp-json/wp/v2/schedule", { slug }).then(
-    (schedules) => schedules[0]
-  );
-}
-
-export async function getAllAwards(): Promise<Award[]> {
-  return wordpressFetch<Award[]>("/wp-json/wp/v2/award");
-}
-
-export async function getAwardById(id: number): Promise<Award> {
-  return wordpressFetch<Award>(`/wp-json/wp/v2/award/${id}`);
+  return getItemBySlug<Schedule>("schedule", slug);
 }
 
 export async function getAwardBySlug(slug: string): Promise<Award> {
-  return wordpressFetch<Award[]>("/wp-json/wp/v2/award", { slug }).then(
-    (awards) => awards[0]
-  );
-}
-
-export async function getPostsByCategory(categoryId: number): Promise<Post[]> {
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", {
-    categories: categoryId,
-  });
-}
-
-export async function getPostsByCampus(campusId: number): Promise<Post[]> {
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", {
-    campuses: campusId,
-  });
-}
-
-export async function getPostsByTag(tagId: number): Promise<Post[]> {
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", { tags: tagId });
-}
-
-export async function getTagsByPost(postId: number): Promise<Tag[]> {
-  return wordpressFetch<Tag[]>("/wp-json/wp/v2/tags", { post: postId });
-}
-
-export async function getAllTags(): Promise<Tag[]> {
-  return wordpressFetch<Tag[]>("/wp-json/wp/v2/tags");
-}
-
-export async function getTagById(id: number): Promise<Tag> {
-  return wordpressFetch<Tag>(`/wp-json/wp/v2/tags/${id}`);
-}
-
-export async function getTagBySlug(slug: string): Promise<Tag> {
-  return wordpressFetch<Tag[]>("/wp-json/wp/v2/tags", { slug }).then(
-    (tags) => tags[0]
-  );
-}
-
-export async function getAllPages(): Promise<Page[]> {
-  return wordpressFetch<Page[]>("/wp-json/wp/v2/pages");
-}
-
-export async function getPageById(id: number): Promise<Page> {
-  return wordpressFetch<Page>(`/wp-json/wp/v2/pages/${id}`);
-}
-
-export async function getPageBySlug(slug: string): Promise<Page> {
-  return wordpressFetch<Page[]>("/wp-json/wp/v2/pages", { slug }).then(
-    (pages) => pages[0]
-  );
-}
-
-export async function getAllAuthors(): Promise<Author[]> {
-  return wordpressFetch<Author[]>("/wp-json/wp/v2/users");
-}
-
-export async function getAuthorById(id: number): Promise<Author> {
-  return wordpressFetch<Author>(`/wp-json/wp/v2/users/${id}`);
-}
-
-export async function getAuthorBySlug(slug: string): Promise<Author> {
-  return wordpressFetch<Author[]>("/wp-json/wp/v2/users", { slug }).then(
-    (users) => users[0]
-  );
-}
-
-export async function getPostsByAuthor(authorId: number): Promise<Post[]> {
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", { author: authorId });
-}
-
-export async function getPostsByAuthorSlug(
-  authorSlug: string
-): Promise<Post[]> {
-  const author = await getAuthorBySlug(authorSlug);
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", { author: author.id });
-}
-
-export async function getPostsByCategorySlug(
-  categorySlug: string
-): Promise<Post[]> {
-  const category = await getCategoryBySlug(categorySlug);
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", {
-    categories: category.id,
-  });
-}
-
-export async function getPostsByTagSlug(tagSlug: string): Promise<Post[]> {
-  const tag = await getTagBySlug(tagSlug);
-  return wordpressFetch<Post[]>("/wp-json/wp/v2/posts", { tags: tag.id });
-}
-
-export async function getFeaturedMediaById(id: number): Promise<FeaturedMedia> {
-  return wordpressFetch<FeaturedMedia>(`/wp-json/wp/v2/media/${id}`);
+  return getItemBySlug<Award>("award", slug);
 }
 
 export async function searchCategories(query: string): Promise<Category[]> {
@@ -458,20 +382,6 @@ export async function searchCategories(query: string): Promise<Category[]> {
 
 export async function searchCampuses(query: string): Promise<Campus[]> {
   return wordpressFetch<Campus[]>("/wp-json/wp/v2/campuses", {
-    search: query,
-    per_page: 100,
-  });
-}
-
-export async function searchTags(query: string): Promise<Tag[]> {
-  return wordpressFetch<Tag[]>("/wp-json/wp/v2/tags", {
-    search: query,
-    per_page: 100,
-  });
-}
-
-export async function searchAuthors(query: string): Promise<Author[]> {
-  return wordpressFetch<Author[]>("/wp-json/wp/v2/users", {
     search: query,
     per_page: 100,
   });
@@ -504,6 +414,10 @@ export async function getAllItemSlugs(postTypeSlug: string): Promise<{ slug: str
 
 export async function getAllPostSlugs(): Promise<{ slug: string }[]> {
   return getAllItemSlugs('posts');
+}
+
+export async function getAllProgramsSlugs(): Promise<{ slug: string }[]> {
+  return getAllItemSlugs('program');
 }
 
 // Enhanced pagination functions for specific queries

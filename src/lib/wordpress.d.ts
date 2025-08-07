@@ -50,8 +50,7 @@ export interface FeaturedMedia extends WPEntity {
     media_details: MediaDetails;
     source_url: string;
 }
-  
-// Content types
+
 export interface Post extends WPEntity {
     title: RenderedTitle;
     content: RenderedContent;
@@ -81,7 +80,6 @@ export interface Post extends WPEntity {
 export interface Program extends Post {
     acf: {
         short_description?: string;
-        tuition?: string;
         kuali_id?: string;
         tier?: number;
     };
