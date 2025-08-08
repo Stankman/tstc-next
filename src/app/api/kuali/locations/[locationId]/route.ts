@@ -4,10 +4,10 @@ import type { KualiLocation } from "@/lib/kuali/kuali";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { locationId: string } }
+  { params }: { params: Promise<{ locationId: string }> }
 ) {
   try {
-    const { locationId } = params;
+    const { locationId } = await params;
     if (!locationId) {
       return NextResponse.json(
         { error: "Location ID is required" },

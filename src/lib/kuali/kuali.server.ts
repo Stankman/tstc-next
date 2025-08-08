@@ -17,8 +17,6 @@ function withTimeout<T>(promise: Promise<T>, milliseconds = 10_000): Promise<T> 
 }
 
 export async function kualiFetch<T>(endpoint: string): Promise<T> {
-  console.log(`Calling Kuali: ${KUALI_BASE_URL}${endpoint}`);
-
   const response = await withTimeout(
     fetch(`${KUALI_BASE_URL}${endpoint}`, {
       headers: {

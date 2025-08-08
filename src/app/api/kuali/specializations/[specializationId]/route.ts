@@ -1,4 +1,3 @@
-// app/api/kuali/specializations/[specializationId]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import {
   getBasicSpecializationById,
