@@ -1,12 +1,12 @@
-import { getFeaturedMediaById } from "@/lib/wordpress";
-import { Program } from "@/lib/wordpress.d";
+import { getFeaturedMediaById } from "@/lib/wordpress/media/wp-media";
+import { Program } from "@/lib/wordpress/wordpress.d";
 import Image from "next/image";
-import Link from "next/link";
+import { LoadingLink } from "@/components/global/loading-overlay";
 
 export async function ProgramCard({ program } : { program: Program}) {
     const featuredImage = program.featured_media ? await getFeaturedMediaById(program.featured_media) : null;
     return (
-        <Link
+        <LoadingLink
             href={`/programs/${program.slug}`}
             className="group rounded overflow-hidden"
         >
@@ -32,6 +32,6 @@ export async function ProgramCard({ program } : { program: Program}) {
             <div className="text-sm">
                 {program.acf.short_description || "No description available."}
             </div>
-        </Link>
+        </LoadingLink>
     );
 }

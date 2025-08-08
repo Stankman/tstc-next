@@ -1,4 +1,3 @@
-// Common types that are reused across multiple entities
 interface WPEntity {
     id: number;
     date: string;
@@ -21,8 +20,7 @@ interface RenderedContent {
 interface RenderedTitle {
     rendered: string;
 }
-  
-// Media types
+
 interface MediaSize {
     file: string;
     width: number;
@@ -102,8 +100,7 @@ export interface Page extends WPEntity {
     template: string;
     meta: Record<string, unknown>;
 }
-  
-// Taxonomy types
+
 interface Taxonomy {
     id: number;
     count: number;
@@ -125,6 +122,9 @@ export interface Tag extends Taxonomy {
 
 export interface Campus extends Taxonomy {
     taxonomy: "campus";
+    acf?: {
+        code?: string;
+    };
 }
 
 export interface Industry extends Taxonomy {
@@ -149,8 +149,7 @@ export interface Author {
     avatar_urls: Record<string, string>;
     meta: Record<string, unknown>;
 }
-  
-// Block types
+
 interface BlockSupports {
     align?: boolean | string[];
     anchor?: boolean;
@@ -244,8 +243,7 @@ export interface SearchResult {
         }>;
     };
 }
-  
-// Component Props Types
+
 export interface FilterBarProps {
     authors: Author[];
     tags: Tag[];

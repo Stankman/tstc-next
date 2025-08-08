@@ -1,7 +1,11 @@
 import { Container } from "@/components/craft";
-import { getAwardById, getCampusById, getIndustryById, getScheduleById } from "@/lib/wordpress";
-import { Program } from "@/lib/wordpress.d";
-import { KualiProgram } from "@/lib/kuali.d";
+import { Program } from "@/lib/wordpress/wordpress.d";
+import { KualiProgram } from "@/lib/kuali/kuali";
+import { calculateProgramTuitionRange, formatCurrency } from "@/lib/pricing";
+import { getCampusById } from "@/lib/wordpress/campuses/wp-campuses";
+import { getIndustryById } from "@/lib/wordpress/industries/wp-industries";
+import { getAwardById } from "@/lib/wordpress/awards/wp-awards";
+import { getScheduleById } from "@/lib/wordpress/schedules/wp-schedules";
 
 interface ProgramInformationProps {
     program: Program;
@@ -24,11 +28,43 @@ export async function ProgramInformation({
     const awards = await Promise.all(program.award?.map(id => getAwardById(id)) || []);
     const campuses = await Promise.all(program.campus?.map(id => getCampusById(id)) || []);
 
+    // Calculate tuition based on program tier and specializations
+    const calculateTuition = (): string => {
+        const tier = program.acf?.tier;
+        
+        if (!tier || tier < 1 || tier > 4) {
+            return "Tuition information not available.";
+        }
+
+        // If we have Kuali program data with specializations, calculate range
+        if (kualiProgram?.specializations && kualiProgram.specializations.length > 0) {
+            const specializationsWithCredits = kualiProgram.specializations.filter(spec => spec.totalCredits && spec.totalCredits > 0);
+            
+            if (specializationsWithCredits.length > 0) {
+                const tuitionRange = calculateProgramTuitionRange(
+                    specializationsWithCredits.map(spec => ({ totalCredits: spec.totalCredits! })),
+                    tier
+                );
+                
+                if (tuitionRange) {
+                    const { min, max } = tuitionRange;
+                    if (min === max) {
+                        return formatCurrency(min);
+                    } else {
+                        return `${formatCurrency(min)} - ${formatCurrency(max)}`;
+                    }
+                }
+            }
+        }
+
+        return "Tuition information not available.";
+    };
+
     const programDetails: ProgramDetailItem[] = [
         {
             id: "tuition",
             label: "Tuition",
-            value: "0",
+            value: calculateTuition(),
             fallback: "Tuition information not available."
         },
         {

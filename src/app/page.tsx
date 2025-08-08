@@ -1,15 +1,14 @@
 import { Section, Container, Prose } from "../components/craft";
-import {getTranslations} from 'next-intl/server';
+import { getCampusByCode } from "@/lib/wordpress/campuses/wp-campuses";
 
 export default async function Home() {
-  const t = await getTranslations('common');
-
   return (
     <Section>
       <Container>
-        <Prose>
-          <h1>{t('title')}</h1>
-          <p>{t('description')}</p>
+        <Prose className="mx-auto text-center">
+          <p className="mt-4 text-lg text-gray-600">
+            Hello World
+          </p>
         </Prose>
       </Container>
     </Section>

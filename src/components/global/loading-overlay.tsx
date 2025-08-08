@@ -17,25 +17,39 @@ const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 export function LoadingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
+  const [isPageReady, setIsPageReady] = useState(false);
   const pathname = usePathname();
 
   // Minimum loading duration in milliseconds
-  const MINIMUM_LOADING_DURATION = 800;
+  const MINIMUM_LOADING_DURATION = 1500; // Increased from 800ms to 1500ms
+  // Additional delay after pathname changes to ensure page is fully loaded
+  const PAGE_LOAD_DELAY = 800;
 
-  // Hide loading when pathname changes (navigation complete)
+  // Listen for when the page is ready
   useEffect(() => {
-    if (loadingStartTime) {
+    setIsPageReady(false);
+    // Set page as ready after a short delay to ensure content is rendered
+    const timer = setTimeout(() => {
+      setIsPageReady(true);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  // Hide loading when pathname changes AND page is ready
+  useEffect(() => {
+    if (loadingStartTime && isLoading && isPageReady) {
       const elapsedTime = Date.now() - loadingStartTime;
-      const remainingTime = Math.max(0, MINIMUM_LOADING_DURATION - elapsedTime);
+      const totalMinimumTime = MINIMUM_LOADING_DURATION + PAGE_LOAD_DELAY;
+      const remainingTime = Math.max(0, totalMinimumTime - elapsedTime);
       
+      // Wait for both minimum duration AND page load delay
       setTimeout(() => {
         setIsLoading(false);
         setLoadingStartTime(null);
       }, remainingTime);
-    } else {
-      setIsLoading(false);
     }
-  }, [pathname, loadingStartTime]);
+  }, [pathname, loadingStartTime, isLoading, isPageReady]);
 
   const showLoading = () => {
     setIsLoading(true);
@@ -45,7 +59,8 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   const hideLoading = () => {
     if (loadingStartTime) {
       const elapsedTime = Date.now() - loadingStartTime;
-      const remainingTime = Math.max(0, MINIMUM_LOADING_DURATION - elapsedTime);
+      const totalMinimumTime = MINIMUM_LOADING_DURATION + PAGE_LOAD_DELAY;
+      const remainingTime = Math.max(0, totalMinimumTime - elapsedTime);
       
       setTimeout(() => {
         setIsLoading(false);

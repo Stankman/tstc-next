@@ -1,4 +1,4 @@
-import { Program } from "@/lib/wordpress.d";
+import { Program } from "@/lib/wordpress/wordpress.d";
 
 interface StatsCardProps {
     program: Program;

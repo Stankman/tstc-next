@@ -1,12 +1,13 @@
 import { Breadcrumbs } from "@/components/global/breadcrumbs";
 import { Section, Container, Prose } from "../../components/craft";
-import { getAllCampuses, getAllIndustries, getItemsPaginated, getProgramsPaginated } from "../../lib/wordpress";
 import { ProgramCard } from "@/components/programs/archive/program-card";
-import { Program } from "@/lib/wordpress.d";
 import { ProgramSearch } from "@/components/programs/archive/program-search";
 import { TaxonomyFilter } from "@/components/programs/archive/taxonomy-filter";
 import { ProgramPagination } from "@/components/programs/archive/program-pagination";
 import {getTranslations} from 'next-intl/server';
+import { getAllCampuses } from "@/lib/wordpress/campuses/wp-campuses";
+import { getAllIndustries } from "@/lib/wordpress/industries/wp-industries";
+import { getProgramsPaginated } from "@/lib/wordpress/programs/wp-programs";
 
 // Archive Page (Server Component)
 export default async function Page({ searchParams }: {

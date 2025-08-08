@@ -8,7 +8,14 @@ export interface KualiProgram {
 export interface KualiLocation {
   id: string;
   name: string;
-  [key: string]: any;
+  ByOiUw4q_: string;
+}
+
+export interface KualiLocationWP {
+  id: string,
+  name: string,
+  slug: string,
+  code: string
 }
 
 export interface KualiDegreeType {
@@ -37,6 +44,7 @@ export interface KualiCourse {
   credits: number;
   lab: number;
   lecture: number;
+  description: string;
 }
 
 export interface KualiCourseBlock {
@@ -59,8 +67,10 @@ export interface KualiSpecialization {
     code: string;
     catalogYear?: string;
     locations: string[];
+    locationsWP?: KualiLocationWP[];
     monthsToComplete: string;
     semesters?: KualiSemester[];
     totalCredits?: number;
     modalities?: KualiModality;
+    prerequisites?: string[];
 }

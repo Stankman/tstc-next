@@ -1,119 +1,135 @@
-import { fetchKualiData, processProgramRequirements } from '@/lib/kuali';
-import { NextRequest, NextResponse } from 'next/server';
-import { KualiProgram, KualiSpecialization } from '@/lib/kuali.d';
+import { getActiveSpecializationPidsForProgram, getBasicProgramById, getLocationsBatchMap, getSpecializationLatestActiveCached, processProgramRequirements } from "@/lib/kuali/kuali.server";
+import { KualiLocationWP, KualiProgram, KualiSpecialization } from "@/lib/kuali/kuali";
+import { getCampusByCode } from "@/lib/wordpress/campuses/wp-campuses";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { programId: string } }
-): Promise<KualiProgram | NextResponse> {
+  _: NextRequest,
+  { params }: { params: Promise<{ programId: string }> }
+) {
   try {
     const { programId } = await params;
-
-    if (!programId) {
+  
+    if(!programId) {
       return NextResponse.json(
-        { error: 'Program ID is required' },
+        { error: "Program ID is required" },
         { status: 400 }
       );
     }
 
-    const programQueryUrl = `/programs/queryAll?limit=1fields=title,pid,_id&_id=${programId}`;
+    const programBasicInfo = await getBasicProgramById(programId);
 
-    const programQueryResponse = await fetchKualiData(programQueryUrl);
-
-    if (!programQueryResponse.ok) {
-      throw new Error(`Program query failed: ${programQueryResponse.status} ${programQueryResponse.statusText}`);
-    }
-
-    const programQueryData = await programQueryResponse.json();
-
-    let programInfo;
-
-    if (programQueryData.res && programQueryData.res.length > 0) {
-      programInfo = programQueryData.res[0];
-    } else {
+    if (!programBasicInfo) {
       return NextResponse.json(
-        { error: 'Program not found' },
+        { error: "Program not found" },
         { status: 404 }
       );
     }
-    const programPid = programInfo.pid;
-    
-    const specializationsQueryUrl = `/specializations/queryAll?inheritedFrom=${programPid}&status=active&fields=title,pid,status,_id`;
-    
-    const specializationsQueryResponse = await fetchKualiData(specializationsQueryUrl);
 
-    if (!specializationsQueryResponse.ok) {
-      throw new Error(`Specializations query failed: ${specializationsQueryResponse.status} ${specializationsQueryResponse.statusText}`);
+    const programPid = programBasicInfo.pid;
+
+    const specializationPids = await getActiveSpecializationPidsForProgram(programBasicInfo.pid);
+
+    const specializationDetailPromises = specializationPids.map(async (specializationPid) => {
+      try {
+        const latestActive = await getSpecializationLatestActiveCached(specializationPid);
+      
+        const { totalCredits } = await processProgramRequirements(latestActive.programRequirements);
+
+        const specialization: KualiSpecialization = {
+          id: latestActive.id,
+          title: latestActive.title,
+          pid: specializationPid,
+          code: latestActive.code,
+          monthsToComplete: latestActive.monthsToComplete,
+          locations: latestActive.locations ?? [],
+          modalities: latestActive.modality ?? {},
+          totalCredits
+        };
+
+        return specialization;
+      } catch (error) {
+        console.error(`[Kuali] Failed to fetch latestActive data for specialization PID: ${specializationPid}`, error);
+        return null;
+      }
+    });
+
+    let specializations = (await Promise.all(specializationDetailPromises))
+      .filter((item): item is KualiSpecialization => item !== null)
+      .sort((a, b) => a.title.localeCompare(b.title));
+
+    if (specializations.length > 0) {
+      const allLocationIds = Array.from(
+        new Set(specializations.flatMap((s) => s.locations || []))
+      );
+
+      if (allLocationIds.length > 0) {
+        const locationsMap = await getLocationsBatchMap(allLocationIds);
+
+        const campusRecordsByLocationId = new Map<string, KualiLocationWP | null>();
+
+        await Promise.all(
+          allLocationIds.map(async (locationId) => {
+            console.log(locationId);
+            const kualiLocation = locationsMap.get(locationId);
+
+            if (!kualiLocation) {
+              campusRecordsByLocationId.set(locationId, null);
+              return;
+            }
+
+            try {
+              const campus = await getCampusByCode(kualiLocation.ByOiUw4q_);
+              
+              campusRecordsByLocationId.set(
+                locationId,
+                campus ? { id: campus.id.toString(), name: campus.name, slug: campus.slug, code: campus.acf?.code ?? `` } : null
+              );
+
+            } catch (err) {
+              console.error(`[WP] Campus lookup failed for location ${locationId}`, err);
+              campusRecordsByLocationId.set(locationId, null);
+            }
+          })
+        );
+
+        specializations = specializations.map((specialization) => ({
+          ...specialization,
+          locationsWP: (specialization.locations || [])
+            .map((locationId) => campusRecordsByLocationId.get(locationId))
+            .filter((item): item is KualiLocationWP => Boolean(item)),
+        }));
+      }
     }
 
-    const specializationsQueryData = await specializationsQueryResponse.json();
-
-    let allSpecializations;
-    if (specializationsQueryData.res && specializationsQueryData.res.length > 0) {
-      allSpecializations = specializationsQueryData.res;
-    } else {
-      allSpecializations = [];
+    const programResponse: KualiProgram = {
+      id: programBasicInfo.id,
+      title: programBasicInfo.title,
+      pid: programPid,
+      specializations
     }
 
-    const uniquePids = [...new Set(allSpecializations.map((spec: any) => spec.pid))].filter((pid): pid is string => typeof pid === 'string' && pid !== '');
+    const response = NextResponse.json(programResponse);
 
-    const specializationsWithDetails = await Promise.all(
-      uniquePids.map(async (specPid: string) => {
-        try {
-          const latestActiveUrl = `/specializations/${specPid}/latestActive`;
-
-          const latestActiveResponse = await fetchKualiData(latestActiveUrl);
-
-          if (!latestActiveResponse.ok) {
-            return null;
-          }
-
-          const latestActiveData = await latestActiveResponse.json();
-
-          const { semesters, totalCredits } = await processProgramRequirements(latestActiveData.programRequirements);
-
-          const specialization: KualiSpecialization = {
-            id: latestActiveData.id || latestActiveData._id,
-            title: latestActiveData.title,
-            pid: specPid,
-            code: latestActiveData.code,
-            monthsToComplete: latestActiveData.monthsToComplete,
-            locations: latestActiveData.locations || [],
-            modalities: latestActiveData.modalities || {},
-            semesters,
-            totalCredits
-          };
-
-          return specialization;
-        } catch (error) {
-          console.error(`Error fetching latest active data for PID ${specPid}:`, error);
-          return null;
-        }
-      })
+    response.headers.set(
+      "Cache-Control",
+      "public, s-max-age=3600, stale-while-revalidate=86400"
     );
 
-    const validSpecializations: KualiSpecialization[] = specializationsWithDetails.filter(spec => spec !== null);
-    
-    const response: KualiProgram = {
-      id: programInfo.id,
-      title: programInfo.title,
-      pid: programInfo.pid,
-      specializations: validSpecializations
-    };
-
-    return NextResponse.json(response);
+    return response;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('404')) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if(/404/.test(errorMessage)) {
       return NextResponse.json(
-        { error: 'Program not found' },
+        { error: "Program not found" },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { 
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      { error: "Internal Server Error",
+        message: errorMessage
       },
       { status: 500 }
     );

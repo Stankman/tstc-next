@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLoading } from "@/components/global/loading-overlay";
-import { Campus } from "@/lib/wordpress.d";
+import { Campus } from "@/lib/wordpress/wordpress.d";
 
 interface ProgramCategoryFilterProps {
     campuses: Campus[];
