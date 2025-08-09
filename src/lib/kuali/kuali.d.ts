@@ -2,6 +2,7 @@ export interface KualiProgram {
   id: string;
   title?: string;
   pid? : string;
+  code?: string;
   specializations?: KualiSpecialization[];
 }
 

@@ -80,10 +80,24 @@ export interface Program extends Post {
         short_description: string;
         kuali_id: string;
         tier: number;
+        instructors?: number[];
+        testimonials?: number[];
+        onet_ids?: Array<{
+            onet_id: string;
+        }>;
     };
     industry: number[];
     schedule: number[];
     award: number[];
+    campus: number[];
+}
+
+export interface Instructor extends Post {
+    acf: {
+        course_title: string;
+        description: string;
+        program: number[];
+    };
     campus: number[];
 }
   

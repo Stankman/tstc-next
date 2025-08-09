@@ -40,7 +40,7 @@ export async function ProgramInformation({ schedules, industries, awards, campus
                 <div>
                 {industriesData.length > 0 ? (
                     industriesData.map((industry, index) => (
-                        <Link href={`/industries/${industry.slug}`} className="text-xl hover:underline underline-offset-2">
+                        <Link key={industry.id} href={`/industries/${industry.slug}`} className="text-xl hover:underline underline-offset-2">
                             {industry.name}
                         </Link>
                     ))

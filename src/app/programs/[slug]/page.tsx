@@ -1,11 +1,13 @@
-import { Section, Container, Prose } from "@/components/craft";
+import { Section, Container } from "@/components/craft";
 import { DegreeCardsContainer } from "@/components/programs/single/degree-cards-container";
 import { ProgramInformation, preloadProgramInformation } from "@/components/programs/single/program-information";
+import InstructorsCarousel from "@/components/programs/single/instructors-carousel";
 import { KualiProgram } from "@/lib/kuali/kuali";
 import { getKualiProgramById, preloadKualiSpecialization } from "@/lib/kuali/kuali.client";
 import { getFeaturedMediaById } from "@/lib/wordpress/media/wp-media";
 import { getProgramBySlug } from "@/lib/wordpress/programs/wp-programs";
 import { FeaturedMedia, Program } from "@/lib/wordpress/wordpress.d";
+import { TestimonialCard, TestimonialCardSkeleton } from "@/components/programs/single/testimonial-card";
 
 export default async function Page(
     { params }: { params: Promise<{ slug: string }> }
@@ -23,7 +25,6 @@ export default async function Page(
         kualiProgram.specializations.forEach(s => preloadKualiSpecialization(s.pid));
     }
 
-    // Preload program information data
     preloadProgramInformation({
         schedules: program.schedule,
         industries: program.industry,
@@ -32,7 +33,7 @@ export default async function Page(
     });
 
     const featuredMedia: FeaturedMedia = await getFeaturedMediaById(program.featured_media);
-
+    
     return (
         <>
             <Section className="bg-tstc-blue-300 text-white">
@@ -69,6 +70,25 @@ export default async function Page(
                         ) : (
                         <div>Kuali program ID: {program.acf.kuali_id} not found</div>
                         )}
+                    </div>
+                </Container>
+            </Section>
+            {program.acf.instructors && program.acf.instructors.length > 0 ? (
+                <Section>
+                    <Container className="px-4 py-8">
+                        <InstructorsCarousel 
+                            instructors={program.acf.instructors} // Dummy instructor IDs for testing
+                            title="Expert Instructors"
+                        />
+                    </Container>
+                </Section>
+            ) : (<></>)}
+            <Section className="bg-gray-100">
+                <Container className="px-4 py-8">
+                    <div className="grid grid-cols-2">
+                        <TestimonialCard />
+                        <TestimonialCard />
+                        <TestimonialCard />
                     </div>
                 </Container>
             </Section>

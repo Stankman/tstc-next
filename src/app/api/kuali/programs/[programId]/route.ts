@@ -35,7 +35,7 @@ export async function GET(
         const latestActive = await getSpecializationLatestActiveCached(specializationPid);
 
         // Skip Dual Credit Programs
-        if (latestActive.code.startsWith(`DCP`)) return null;
+        if (!latestActive.code.startsWith(programBasicInfo.code)) return null;
 
         const specialization: KualiSpecialization = {
           id: latestActive.id,
@@ -56,6 +56,7 @@ export async function GET(
     const programResponse: KualiProgram = {
       id: programBasicInfo.id,
       title: programBasicInfo.title,
+      code: programBasicInfo.code,
       pid: programPid,
       specializations
     }

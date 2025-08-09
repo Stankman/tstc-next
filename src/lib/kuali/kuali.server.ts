@@ -136,7 +136,7 @@ export async function getBasicProgramById(programId: string) {
   // Example: /programs/queryAll?limit=1&fields=title,pid,_id&_id=abc
   const programQueryString = new URLSearchParams({
     limit: "1",
-    fields: "title,pid,_id",
+    fields: "title,pid,code,_id",
     _id: programId,
   }).toString();
 
