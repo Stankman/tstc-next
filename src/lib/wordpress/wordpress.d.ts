@@ -82,8 +82,9 @@ export interface Program extends Post {
         tier: number;
         instructors?: number[];
         testimonials?: number[];
-        onet_ids?: Array<{
+        onet_ids: Array<{
             onet_id: string;
+            onet_url: string;
         }>;
     };
     industry: number[];
@@ -98,7 +99,14 @@ export interface Instructor extends Post {
         description: string;
         program: number[];
     };
-    campus: number[];
+}
+
+export interface Testimonial extends Post {
+    acf: {
+        quote: string;
+        position: string;
+        program: number[];
+    };
 }
   
 export interface Page extends WPEntity {

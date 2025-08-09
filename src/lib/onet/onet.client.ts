@@ -26,8 +26,12 @@ export const getOnetData = cache(async (serieId: string): Promise<OnetData> => {
     return cached.data;
   }
 
+  const baseUrl = typeof window === 'undefined' 
+    ? process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    : '';
+
   try {
-    const response = await fetch(`/api/onet/${serieId}`, {
+    const response = await fetch(`${baseUrl}/api/onet/${serieId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

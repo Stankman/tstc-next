@@ -10,7 +10,7 @@ interface InstructorCardProps {
 export function InstructorCard({ instructor, featuredMedia }: InstructorCardProps) {
     return (
         <motion.div 
-            className="p-8 min-h-[300px] md:min-h-[500px] space-y-4 border rounded border-gray-200"
+            className="p-8 min-h-[500px] md:min-h-[500px] space-y-4 border rounded border-gray-200"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}

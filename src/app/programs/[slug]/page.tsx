@@ -8,6 +8,7 @@ import { getFeaturedMediaById } from "@/lib/wordpress/media/wp-media";
 import { getProgramBySlug } from "@/lib/wordpress/programs/wp-programs";
 import { FeaturedMedia, Program } from "@/lib/wordpress/wordpress.d";
 import { TestimonialCard, TestimonialCardSkeleton } from "@/components/programs/single/testimonial-card";
+import { OnetCard, OnetCardSkeleton } from "@/components/programs/single/onet-card";
 
 export default async function Page(
     { params }: { params: Promise<{ slug: string }> }
@@ -85,11 +86,62 @@ export default async function Page(
             ) : (<></>)}
             <Section className="bg-gray-100">
                 <Container className="px-4 py-8">
-                    <div className="grid grid-cols-2">
-                        <TestimonialCard />
-                        <TestimonialCard />
-                        <TestimonialCard />
-                    </div>
+                    {/* Conditionally render based on number of testimonials */}
+                    {program.acf.testimonials && program.acf.testimonials.length > 0 ? (
+                        program.acf.testimonials.length === 1 ? (
+                            // Single testimonial layout
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="flex justify-center order-1">
+                                    <TestimonialCard testimonialId={program.acf.testimonials[0]} />
+                                </div>
+                                <div className="w-full md:flex md:justify-center order-2">
+                                    <OnetCard 
+                                        onetId={program.acf.onet_ids?.[0]?.onet_id} 
+                                        onetUrl={program.acf.onet_ids?.[0]?.onet_url} 
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            // Multiple testimonials layout (original)
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                {/* Mobile order: Testimonial, Onet, Testimonial, Onet */}
+                                <div className="flex justify-center order-1">
+                                    <TestimonialCard testimonialId={program.acf.testimonials[0]} />
+                                </div>
+                                <div className="w-full md:flex md:justify-center order-2">
+                                    <OnetCard 
+                                        onetId={program.acf.onet_ids?.[0]?.onet_id} 
+                                        onetUrl={program.acf.onet_ids?.[0]?.onet_url} 
+                                    />
+                                </div>
+                                <div className="w-full md:flex md:justify-center order-4 md:order-3">
+                                    <OnetCard 
+                                        onetId={program.acf.onet_ids?.[1]?.onet_id} 
+                                        onetUrl={program.acf.onet_ids?.[1]?.onet_url} 
+                                    />
+                                </div>
+                                <div className="flex justify-center order-3 md:order-4">
+                                    <TestimonialCard testimonialId={program.acf.testimonials[1]} />
+                                </div>
+                            </div>
+                        )
+                    ) : (
+                        // No testimonials layout
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="w-full md:flex md:justify-center order-1">
+                                <OnetCard 
+                                    onetId={program.acf.onet_ids?.[0]?.onet_id} 
+                                    onetUrl={program.acf.onet_ids?.[0]?.onet_url} 
+                                />
+                            </div>
+                            <div className="w-full md:flex md:justify-center order-2">
+                                <OnetCard 
+                                    onetId={program.acf.onet_ids?.[1]?.onet_id} 
+                                    onetUrl={program.acf.onet_ids?.[1]?.onet_url} 
+                                />
+                            </div>
+                        </div>
+                    )}
                 </Container>
             </Section>
         </>
