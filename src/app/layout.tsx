@@ -8,16 +8,6 @@ import { LoadingProvider } from "../components/global/loading-overlay";
 import { LocaleInitializer } from "../components/global/locale-initializer";
 import type { Metadata } from "next";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('common');
  
@@ -37,7 +27,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`antialiased`}>
         <LocaleInitializer />
         <NextIntlClientProvider messages={messages}>
           <LoadingProvider>

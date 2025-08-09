@@ -1,110 +1,77 @@
-import { Container } from "@/components/craft";
-import { Program } from "@/lib/wordpress/wordpress.d";
-import { KualiProgram } from "@/lib/kuali/kuali";
-import { calculateProgramTuitionRange, formatCurrency } from "@/lib/pricing";
+import { getAwardById } from "@/lib/wordpress/awards/wp-awards";
 import { getCampusById } from "@/lib/wordpress/campuses/wp-campuses";
 import { getIndustryById } from "@/lib/wordpress/industries/wp-industries";
-import { getAwardById } from "@/lib/wordpress/awards/wp-awards";
 import { getScheduleById } from "@/lib/wordpress/schedules/wp-schedules";
+import Image from "next/image";
+import Link from "next/link";
 
 interface ProgramInformationProps {
-    program: Program;
-    kualiProgram?: KualiProgram | null;
+    schedules: number[];
+    industries: number[];
+    awards: number[];
+    campuses: number[];
 }
 
-interface ProgramDetailItem {
-    id: string;
-    label: string;
-    value: string | undefined;
-    fallback: string;
+export function preloadProgramInformation({ schedules, industries, awards, campuses }: ProgramInformationProps) {
+    schedules.forEach((id: number) => void getScheduleById(id));
+    industries.forEach((id: number) => void getIndustryById(id));
+    awards.forEach((id: number) => void getAwardById(id));
+    campuses.forEach((id: number) => void getCampusById(id));
 }
 
-export async function ProgramInformation({ 
-    program, 
-    kualiProgram
-}: ProgramInformationProps) {
-    const schedules = await Promise.all(program.schedule?.map(id => getScheduleById(id)) || []);
-    const industries = await Promise.all(program.industry?.map(id => getIndustryById(id)) || []);
-    const awards = await Promise.all(program.award?.map(id => getAwardById(id)) || []);
-    const campuses = await Promise.all(program.campus?.map(id => getCampusById(id)) || []);
-
-    // Calculate tuition based on program tier and specializations
-    const calculateTuition = (): string => {
-        const tier = program.acf?.tier;
-        
-        if (!tier || tier < 1 || tier > 4) {
-            return "Tuition information not available.";
-        }
-
-        // If we have Kuali program data with specializations, calculate range
-        if (kualiProgram?.specializations && kualiProgram.specializations.length > 0) {
-            const specializationsWithCredits = kualiProgram.specializations.filter(spec => spec.totalCredits && spec.totalCredits > 0);
-            
-            if (specializationsWithCredits.length > 0) {
-                const tuitionRange = calculateProgramTuitionRange(
-                    specializationsWithCredits.map(spec => ({ totalCredits: spec.totalCredits! })),
-                    tier
-                );
-                
-                if (tuitionRange) {
-                    const { min, max } = tuitionRange;
-                    if (min === max) {
-                        return formatCurrency(min);
-                    } else {
-                        return `${formatCurrency(min)} - ${formatCurrency(max)}`;
-                    }
-                }
-            }
-        }
-
-        return "Tuition information not available.";
-    };
-
-    const programDetails: ProgramDetailItem[] = [
-        {
-            id: "tuition",
-            label: "Tuition",
-            value: calculateTuition(),
-            fallback: "Tuition information not available."
-        },
-        {
-            id: "schedule",
-            label: "Schedule",
-            value: schedules.length > 0 ? schedules.map(schedule => schedule.name).join(", ") : undefined,
-            fallback: "Schedule information not available."
-        },
-        {
-            id: "industry",
-            label: "Industry",
-            value: industries.length > 0 ? industries.map(industry => industry.name).join(", ") : undefined,
-            fallback: "Industry information not available."
-        },
-        {
-            id: "awards",
-            label: "Awards",
-            value: awards.length > 0 ? awards.map(award => award.name).join(", ") : undefined,
-            fallback: "Awards information not available."
-        },
-        {
-            id: "locations",
-            label: "Locations",
-            value: campuses.length > 0 ? campuses.map(campus => campus.name).join(", ") : undefined,
-            fallback: "Locations information not available."
-        }
-    ];
+export async function ProgramInformation({ schedules, industries, awards, campuses }: ProgramInformationProps) {
+    const [schedulesData, industriesData, awardsData, campusesData] = await Promise.all([
+        Promise.all(schedules.map(id => getScheduleById(id))),
+        Promise.all(industries.map(id => getIndustryById(id))),
+        Promise.all(awards.map(id => getAwardById(id))),
+        Promise.all(campuses.map(id => getCampusById(id)))
+    ]);
 
     return (
-        <div id="program__information" className="bg-tstc-blue-200 text-white">
-            <Container className="px-4 py-8">
-                <div id="program__details" className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
-                    {programDetails.map((detail) => (
-                        <div key={detail.id} id={detail.id}>
-                            <div className="text-base font-medium" dangerouslySetInnerHTML={{ __html: detail.label }} />
-                            <p className="text-xl" dangerouslySetInnerHTML={{ __html: detail.value || detail.fallback }} />
-                        </div>
-                    ))}
+        <div id="program__details" className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div id="detail-schedule" className="flex flex-col">
+                <span>Schedule</span>
+                <span className="text-xl">
+                    {schedulesData.length > 0 ? schedulesData.map(schedule => schedule.name).join(", ") : "Not specified"}
+                </span>
+            </div>
+            <div id="detail-industry" className="flex flex-col">
+                <span>Industry</span>
+                <div>
+                {industriesData.length > 0 ? (
+                    industriesData.map((industry, index) => (
+                        <Link href={`/industries/${industry.slug}`} className="text-xl hover:underline underline-offset-2">
+                            {industry.name}
+                        </Link>
+                    ))
+                ) : (
+                    <span className="text-xl">Not specified</span>
+                )}
                 </div>
-            </Container>
+            </div>
+            <div id="detail-awards" className="flex flex-col">
+                <span>Award Type</span> 
+                <span className="text-xl">
+                    {awardsData.length > 0 ? awardsData.map(award => award.name).join(", ") : "Not specified"}
+                </span>
+            </div>
+            <div id="detail-locations" className="flex items-center">
+                <Image src="/icons/location-icon-2.svg" className="inline mr-2" alt="Location Icon" width={24} height={24} />
+                <div>
+                {campusesData.length > 0 ? (
+                    campusesData.map((campus, index) => (
+                        <span key={campus.slug}>
+                            <Link href={`/campuses/${campus.slug}`} className="text-xl hover:underline underline-offset-2">
+                                {campus.name}
+                            </Link>
+                            {index < campusesData.length - 1 && ", "}
+                        </span>
+                    ))
+                ) : (
+                    <span className="text-xl">Not specified</span>
+                )}
+                </div>
+            </div>
         </div>
     );
 }

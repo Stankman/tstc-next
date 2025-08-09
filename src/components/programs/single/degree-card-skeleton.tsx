@@ -1,7 +1,7 @@
 export function DegreeCardSkeleton() {
   return (
-    <div className="bg-white text-black p-4 rounded min-h-[400px] flex flex-col justify-between animate-pulse">
-      <div id="header">
+    <div className="bg-white text-black p-4 rounded min-h-[250px] md:min-h-[300px] flex flex-col justify-between">
+      <div id="header" className="animate-pulse">
         {/* Title skeleton */}
         <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
         {/* Code skeleton */}
@@ -10,7 +10,7 @@ export function DegreeCardSkeleton() {
         <div className="h-6 bg-gray-200 rounded w-2/3"></div>
       </div>
       
-      <div id="footer" className="space-y-4">
+      <div id="footer" className="animate-pulse space-y-4">
         {/* Tuition skeleton */}
         <div className="py-5">
           <div className="h-5 bg-gray-300 rounded w-1/2"></div>

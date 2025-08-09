@@ -33,18 +33,14 @@ export async function GET(
     const specializationDetailPromises = specializationPids.map(async (specializationPid) => {
       try {
         const latestActive = await getSpecializationLatestActiveCached(specializationPid);
-      
-        const { totalCredits } = await processProgramRequirements(latestActive.programRequirements);
+
+        // Skip Dual Credit Programs
+        if (latestActive.code.startsWith(`DCP`)) return null;
 
         const specialization: KualiSpecialization = {
           id: latestActive.id,
           title: latestActive.title,
-          pid: specializationPid,
-          code: latestActive.code,
-          monthsToComplete: latestActive.monthsToComplete,
-          locations: latestActive.locations ?? [],
-          modalities: latestActive.modality ?? {},
-          totalCredits
+          pid: specializationPid
         };
 
         return specialization;
@@ -55,52 +51,7 @@ export async function GET(
     });
 
     let specializations = (await Promise.all(specializationDetailPromises))
-      .filter((item): item is KualiSpecialization => item !== null)
-      .sort((a, b) => a.title.localeCompare(b.title));
-
-    if (specializations.length > 0) {
-      const allLocationIds = Array.from(
-        new Set(specializations.flatMap((s) => s.locations || []))
-      );
-
-      if (allLocationIds.length > 0) {
-        const locationsMap = await getLocationsBatchMap(allLocationIds);
-
-        const campusRecordsByLocationId = new Map<string, KualiLocationWP | null>();
-
-        await Promise.all(
-          allLocationIds.map(async (locationId) => {
-            console.log(locationId);
-            const kualiLocation = locationsMap.get(locationId);
-
-            if (!kualiLocation) {
-              campusRecordsByLocationId.set(locationId, null);
-              return;
-            }
-
-            try {
-              const campus = await getCampusByCode(kualiLocation.ByOiUw4q_);
-              
-              campusRecordsByLocationId.set(
-                locationId,
-                campus ? { id: campus.id.toString(), name: campus.name, slug: campus.slug, code: campus.acf?.code ?? `` } : null
-              );
-
-            } catch (err) {
-              console.error(`[WP] Campus lookup failed for location ${locationId}`, err);
-              campusRecordsByLocationId.set(locationId, null);
-            }
-          })
-        );
-
-        specializations = specializations.map((specialization) => ({
-          ...specialization,
-          locationsWP: (specialization.locations || [])
-            .map((locationId) => campusRecordsByLocationId.get(locationId))
-            .filter((item): item is KualiLocationWP => Boolean(item)),
-        }));
-      }
-    }
+      .filter((item): item is KualiSpecialization => item !== null);
 
     const programResponse: KualiProgram = {
       id: programBasicInfo.id,

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getBasicSpecializationById,
   getLocationsBatchMap,
   getSpecializationLatestActiveCached,
   processProgramRequirements,
@@ -10,25 +9,16 @@ import { getCampusByCode } from "@/lib/wordpress/campuses/wp-campuses";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ specializationId: string }> }
+  { params }: { params: Promise<{ specializationPid: string }> }
 ) {
   try {
-    const { specializationId } = await params;
+    const { specializationPid } = await params;
 
-    if (!specializationId) {
-      return NextResponse.json({ error: "Specialization ID is required" }, { status: 400 });
+    if (!specializationPid) {
+      return NextResponse.json({ error: "Specialization Pid is required" }, { status: 400 });
     }
 
-    const specializationBasicInfo = await getBasicSpecializationById(specializationId);
-
-    if (!specializationBasicInfo) {
-      return NextResponse.json(
-        { error: "Specialization not found" },
-        { status: 404 }
-      );
-    }
-
-    const latestActiveData = await getSpecializationLatestActiveCached(specializationBasicInfo.pid);
+    const latestActiveData = await getSpecializationLatestActiveCached(specializationPid);
 
     if (!latestActiveData?.id) {
       return NextResponse.json({ error: "Specialization not found" }, { status: 404 });

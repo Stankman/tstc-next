@@ -64,11 +64,11 @@ export interface KualiSpecialization {
     id: string;
     pid: string;
     title: string;
-    code: string;
+    code?: string;
     catalogYear?: string;
-    locations: string[];
+    locations?: string[];
     locationsWP?: KualiLocationWP[];
-    monthsToComplete: string;
+    monthsToComplete?: string;
     semesters?: KualiSemester[];
     totalCredits?: number;
     modalities?: KualiModality;

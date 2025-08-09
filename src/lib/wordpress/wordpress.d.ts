@@ -77,9 +77,9 @@ export interface Post extends WPEntity {
 
 export interface Program extends Post {
     acf: {
-        short_description?: string;
-        kuali_id?: string;
-        tier?: number;
+        short_description: string;
+        kuali_id: string;
+        tier: number;
     };
     industry: number[];
     schedule: number[];

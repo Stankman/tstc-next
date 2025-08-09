@@ -1,20 +1,35 @@
-import type { KualiProgram } from "./kuali.d";
+import { cache } from "react";
+import type { KualiProgram, KualiSpecialization } from "./kuali.d";
 
-export async function fetchProgramForUi(programId: string): Promise<KualiProgram | null> {
-  const response = await fetch(`/api/kuali/programs/${programId}`, { cache: "no-store" });
+export const getKualiProgramById = cache(async (programId: string): Promise<KualiProgram | null> => {
+  const baseUrl = typeof window === 'undefined' 
+    ? process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    : '';
+
+  const url = `${baseUrl}/api/kuali/programs/${programId}`;
+  const response = await fetch(url, { cache: "no-store" });
 
   if (!response.ok) return null;
 
   return response.json();
+});
+
+export function preloadKualiProgram(programId: string) {
+  void getKualiProgramById(programId);
 }
 
-export async function fetchLocationsBatchForUi(locationIds: string[]): Promise<Array<{id: string; name: string; slug: string}>> {
-  const response = await fetch(`/api/kuali/locations`, {
-    method: "POST",
-    body: JSON.stringify({ ids: locationIds }),
-  });
+export const getKualiSpecializationById = cache(async (specializationPid: string): Promise<KualiSpecialization | null> => {
+  const baseUrl = typeof window === 'undefined' 
+    ? process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    : '';
 
-  if (!response.ok) return [];
+  const url = `${baseUrl}/api/kuali/specializations/${specializationPid}`;
+  const response = await fetch(url, { cache: "no-store" });
 
+  if (!response.ok) return null;
   return response.json();
+});
+
+export function preloadKualiSpecialization(specializationPid: string) {
+  void getKualiSpecializationById(specializationPid);
 }
